@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>By Nikky — Boutique</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --burgundy: #6B1F3A; --burgundy-dark: #4A1228;
+    --blush: #F5E6EC; --ivory: #FDF8F5; --gold: #C9A96E; --gold-light: #E8D5B0;
+    --charcoal: #2C2C2C; --gray: #8A8A8A; --gray-light: #F0EBEE; --white: #FFFFFF;
+    --success: #4A7C59; --warning: #B8860B; --danger: #8B2F2F;
+    --shadow: 0 2px 20px rgba(107,31,58,0.1); --shadow-md: 0 4px 30px rgba(107,31,58,0.15);
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--blush); color: var(--charcoal); min-height: 100vh; overflow-x: hidden; }
+
+  /* LOGIN */
+  #loginScreen { min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1; }
+  .login-card { background:var(--white);border-radius:24px;padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-md);text-align:center; }
+  .brand-logo .ribbon { display:inline-block;background:var(--burgundy);color:var(--gold);font-family:'Cormorant Garant',serif;font-size:2.2rem;font-weight:600;letter-spacing:0.12em;padding:10px 32px;border-radius:4px; }
+  .brand-tagline { font-family:'Cormorant Garant',serif;font-size:0.9rem;font-style:italic;color:var(--gray);letter-spacing:0.2em;margin-bottom:36px;margin-top:8px; }
+  .gold-divider { width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:16px auto; }
+  .form-group { margin-bottom:20px;text-align:left; }
+  .form-group label { display:block;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--burgundy);margin-bottom:8px; }
+  .form-group input, .form-group select, .form-group textarea { width:100%;padding:12px 16px;border:1.5px solid var(--gold-light);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.95rem;color:var(--charcoal);background:var(--ivory);outline:none;transition:border-color 0.2s; }
+  .form-group input:focus, .form-group select:focus { border-color:var(--burgundy); }
+  .btn { display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s; }
+  .btn-primary { background:var(--burgundy);color:var(--white);width:100%; }
+  .btn-primary:hover { background:var(--burgundy-dark); }
+  .btn-gold { background:var(--gold);color:var(--white); }
+  .btn-outline { background:transparent;color:var(--burgundy);border:1.5px solid var(--burgundy); }
+  .btn-outline:hover { background:var(--blush); }
+  .btn-sm { padding:8px 16px;font-size:0.82rem;border-radius:8px; }
+
+  /* APP */
+  #app { display:none;min-height:100vh; }
+  .topbar { position:fixed;top:0;left:0;right:0;background:var(--burgundy);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2); }
+  .topbar-brand { font-family:'Cormorant Garant',serif;font-size:1.5rem;font-weight:600;color:var(--gold);letter-spacing:0.1em; }
+  .topbar-right { display:flex;align-items:center;gap:12px; }
+  .user-pill { display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);padding:6px 12px;border-radius:20px; }
+  .user-pill .avatar { width:28px;height:28px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:var(--burgundy); }
+  .user-pill .name { color:var(--white);font-size:0.82rem;font-weight:500; }
+  .user-pill .role { color:var(--gold-light);font-size:0.72rem; }
+  .logout-btn { background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:1rem;padding:4px; }
+  
+  .content-area { padding: 80px 20px; max-width: 1200px; margin: 0 auto; }
+  .page { display:none; background: var(--white); padding: 24px; border-radius: 16px; box-shadow: var(--shadow); }
+  .page.active { display:block; }
+  .page-title { font-family:'Cormorant Garant',serif;font-size:1.8rem;font-weight:600;color:var(--burgundy);margin-bottom:4px; }
+  .page-subtitle { font-size:0.85rem;color:var(--gray);margin-bottom:24px; }
+  
+  .filter-bar { display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;align-items:center; }
+  .search-box { flex:1;min-width:200px;position:relative; }
+  .search-box input { width:100%;padding:11px 16px 11px 42px;border:1.5px solid var(--gold-light);border-radius:10px;font-size:0.9rem;background:var(--white);color:var(--charcoal);outline:none; }
+  
+  .product-grid { display:grid;grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));gap:16px; }
+  .product-card { background:var(--white);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);padding: 16px; border: 1px solid var(--gray-light); }
+  .product-name { font-family:'Cormorant Garant',serif;font-size:1.1rem;font-weight:600;color:var(--charcoal); }
+  .product-price { font-size:1rem;font-weight:600;color:var(--burgundy); margin-top: 4px;}
+  
+  .sync-badge { display:inline-flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--gold-light);margin-left:8px; }
+  .sync-dot { width:6px;height:6px;background:#4CAF50;border-radius:50%;animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  
+  /* MODAL */
+  .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--white);border-radius:20px;width:100%;max-width:500px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="brand-logo"><div class="ribbon">By Nikky</div></div>
+    <div class="brand-tagline">Boutique de moda exclusiva</div>
+    <div class="gold-divider"></div>
+    <div class="form-group"><label>Usuario</label><input type="text" id="loginUser" placeholder="admin"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Iniciar Sesión</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">By Nikky <span class="sync-badge"><span class="sync-dot"></span>Nube Activa</span></div>
+    <div class="topbar-right">
+      <div class="user-pill">
+        <div class="avatar">N</div>
+        <div><div class="name" id="topName">Admin</div><div class="role">Administradora</div></div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">✕</button>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <div class="page active" id="page-inventory">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div>
+          <div class="page-title">Inventario Compartido</div>
+          <div class="page-subtitle">Los datos se sincronizan con Google Sheets</div>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="openModal()">+ Agregar Prenda</button>
+      </div>
+
+      <div class="filter-bar">
+        <div class="search-box"><input type="text" placeholder="Buscar prenda..." id="searchInv" oninput="renderInventory()"></div>
+      </div>
+
+      <div class="product-grid" id="productGrid">Cargando inventario real...</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <h3 class="page-title" style="margin-bottom:16px;">Nueva Prenda</h3>
+    <div class="form-group"><label>Nombre del Producto</label><input type="text" id="pName"></div>
+    <div class="form-group"><label>Cantidad</label><input type="number" id="pQty"></div>
+    <div class="form-group"><label>Precio</label><input type="number" id="pPrice"></div>
+    <div class="form-group">
+      <label>Categoría</label>
+      <select id="pCat">
+        <option>Blusa</option><option>Pantalón</option><option>Vestido</option><option>Falda</option><option>Chaqueta</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:20px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveProduct()">Guardar en la Nube</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // URL DEL PUENTE DE GOOGLE APPS SCRIPT INTEGRADA CON TU ENLACE
+  const CONFIG_WEB_URL = "https://script.google.com/macros/s/AKfycbw_OhVCoXQJu8uIn2kyC8YerThE38lKFkIoBnphAw7xU6byVuW34XCQ38PFlJyd9MHa/exec"; 
+
+  let inventoryData = [];
+
+  function doLogin() {
+    const u = document.getElementById('loginUser').value;
+    const p = document.getElementById('loginPass').value;
+    if((u==='admin' || u==='empleada') && p==='1234') {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('topName').innerText = u.toUpperCase();
+      fetchInventory();
+    } else {
+      alert('Usuario o contraseña incorrectos');
+    }
+  }
+
+  function doLogout() {
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+
+  // LEER DATOS DESDE GOOGLE SHEETS
+  async function fetchInventory() {
+    const grid = document.getElementById('productGrid');
+    grid.innerHTML = "🔄 Sincronizando con Google Sheets...";
+    try {
+      const response = await fetch(CONFIG_WEB_URL);
+      inventoryData = await response.json();
+      renderInventory();
+    } catch (error) {
+      grid.innerHTML = "❌ Error al conectar con la base de datos.";
+      console.error(error);
+    }
+  }
+
+  function renderInventory() {
+    const grid = document.getElementById('productGrid');
+    const search = document.getElementById('searchInv').value.toLowerCase();
+    grid.innerHTML = '';
+
+    const filtered = inventoryData.filter(item => 
+      item.Producto && item.Producto.toLowerCase().includes(search)
+    );
+
+    if(filtered.length === 0) {
+      grid.innerHTML = '<p style="color:var(--gray)">No hay prendas registradas.</p>';
+      return;
+    }
+
+    filtered.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <div class="product-name">${item.Producto}</div>
+        <div style="font-size:0.8rem; color:var(--gray)">Cat: ${item.Categoría}</div>
+        <div class="product-price">$${Number(item.Precio).toLocaleString()}</div>
+        <div style="font-size:0.85rem; margin-top:8px; font-weight:bold; color:${item.Cantidad > 3 ? 'var(--success)' : 'var(--danger)'}">
+          Stock: ${item.Cantidad} uds
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  function openModal() { document.getElementById('productModal').classList.add('open'); }
+  function closeModal() { document.getElementById('productModal').classList.remove('open'); }
+
+  // GUARDAR NUEVO PRODUCTO EN GOOGLE SHEETS
+  async function saveProduct() {
+    const name = document.getElementById('pName').value;
+    const qty = document.getElementById('pQty').value;
+    const price = document.getElementById('pPrice').value;
+    const cat = document.getElementById('pCat').value;
+
+    if(!name || !qty || !price) {
+      alert('Por favor llena todos los campos');
+      return;
+    }
+
+    const newProduct = {
+      id: "REF-" + Math.floor(Math.random() * 10000),
+      producto: name,
+      cantidad: Number(qty),
+      precio: Number(price),
+      categoria: cat
+    };
+
+    closeModal();
+    document.getElementById('productGrid').innerHTML = "⏳ Guardando nueva prenda en la nube...";
+
+    try {
+      await fetch(CONFIG_WEB_URL, {
+        method: "POST",
+        mode: "no-cors", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProduct)
+      });
+      
+      setTimeout(fetchInventory, 2000);
+    } catch (error) {
+      alert("Error al guardar producto");
+      fetchInventory();
+    }
+  }
+</script>
+</body>
+</html>
