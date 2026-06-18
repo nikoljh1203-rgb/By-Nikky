@@ -133,114 +133,452 @@
   </div>
 </div>
 
-<script>
-  // URL DEL PUENTE DE GOOGLE APPS SCRIPT INTEGRADA CON TU ENLACE
-  const CONFIG_WEB_URL = "https://script.google.com/macros/s/AKfycbzbZqDRKGSFhWuagFgtTxFD614VeZCGty6YKkKaOogcdLdGdeNUxR6x687OZ05GKbLR/exec"; 
+// URL DE TU BASE DE DATOS REAL (GOOGLE APPS SCRIPT)
+  // ¡Asegúrate de pegar tu nuevo enlace aquí adentro manteniendo las comillas!
+  const CONFIG_WEB_URL = "TU_NUEVO_ENLACE_AQUÍ";
 
-  let inventoryData = [];
+  const MENU_CONFIG = [
+    { id: 'dashboard', label: 'Panel', icon: '📊', roles: ['admin', 'empleada'] },
+    { id: 'inventory', label: 'Inventario', icon: '👗', roles: ['admin', 'empleada'] },
+    { id: 'sales', label: 'Vender', icon: '🛍️', roles: ['admin', 'empleada'] },
+    { id: 'reports', label: 'Reportes', icon: '📈', roles: ['admin'] },
+    { id: 'users', label: 'Equipo', icon: '👥', roles: ['admin'] }
+  ];
+
+  let currentUser = null;
+  let inventory = [];
+  let sales = [];
+  let cart = [];
+  let currentPayMethod = 'efectivo';
+
+  const defaultUsers = [
+    { name: 'Nikol (Propietaria)', role: 'admin', initial: 'N' },
+    { name: 'Empleada By Nikky', role: 'empleada', initial: 'E' }
+  ];
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const localSales = localStorage.getItem('bn_sales');
+    if(localSales) sales = JSON.parse(localSales);
+    showDate();
+  });
+
+  function showDate() {
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('dashDate').innerText = new Date().toLocaleDateString('es-ES', options);
+  }
 
   function doLogin() {
-    const u = document.getElementById('loginUser').value;
+    const u = document.getElementById('loginUser').value.trim().toLowerCase();
     const p = document.getElementById('loginPass').value;
     if((u==='admin' || u==='empleada') && p==='1234') {
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      document.getElementById('topName').innerText = u.toUpperCase();
-      fetchInventory();
+      currentUser = u === 'admin' ? { name: 'Nikol', role: 'admin', initial: 'N' } : { name: 'Empleado', role: 'empleada', initial: 'E' };
+      initApp();
     } else {
-      alert('Usuario o contraseña incorrectos');
+      showToast('⚠️ Usuario o contraseña incorrectos');
     }
   }
 
   function doLogout() {
+    currentUser = null;
     document.getElementById('app').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('loginPass').value = '';
   }
 
-  // LEER DATOS DESDE GOOGLE SHEETS
+  async function initApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    
+    document.getElementById('topName').innerText = currentUser.name;
+    document.getElementById('topRole').innerText = currentUser.role === 'admin' ? 'Administradora' : 'Personal';
+    document.getElementById('topAvatar').innerText = currentUser.initial;
+    document.getElementById('sideUser').innerText = currentUser.name;
+    document.getElementById('sideRole').innerText = currentUser.role === 'admin' ? 'Administradora' : 'Personal';
+
+    buildNavigation();
+    await fetchInventory();
+    navigateTo('dashboard');
+  }
+
+  function buildNavigation() {
+    const navContainer = document.getElementById('sidebarNav');
+    navContainer.innerHTML = '';
+    
+    let bottomNav = document.querySelector('.bottom-nav');
+    if(bottomNav) bottomNav.remove();
+    bottomNav = document.createElement('div');
+    bottomNav.className = 'bottom-nav';
+
+    MENU_CONFIG.forEach(item => {
+      if(item.roles.includes(currentUser.role)) {
+        const sideBtn = document.createElement('button');
+        sideBtn.className = `side-item btn-nav-${item.id}`;
+        sideBtn.innerHTML = `<span class="icon">${item.icon}</span><span>${item.label}</span>`;
+        sideBtn.onclick = () => navigateTo(item.id);
+        navContainer.appendChild(sideBtn);
+
+        const mobileBtn = document.createElement('button');
+        mobileBtn.className = `nav-item btn-nav-${item.id}`;
+        mobileBtn.innerHTML = `<span class="nav-icon">${item.icon}</span><span>${item.label}</span>`;
+        mobileBtn.onclick = () => navigateTo(item.id);
+        bottomNav.appendChild(mobileBtn);
+      }
+    });
+    document.getElementById('app').appendChild(bottomNav);
+  }
+
+  function navigateTo(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.side-item, .nav-item').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById(`page-${pageId}`).classList.add('active');
+    document.querySelectorAll(`.btn-nav-${pageId}`).forEach(b => b.classList.add('active'));
+
+    if(pageId === 'dashboard') renderDashboard();
+    if(pageId === 'inventory') renderInventory();
+    if(pageId === 'sales') { cart = []; renderSalesProducts(); renderCart(); }
+    if(pageId === 'reports') renderReports();
+    if(pageId === 'users') renderUsers();
+  }
+
+  // LEER DESDE LA HOJA CON MANEJO DE ERRORES MEJORADO
   async function fetchInventory() {
-    const grid = document.getElementById('productGrid');
-    grid.innerHTML = "🔄 Sincronizando con Google Sheets...";
     try {
       const response = await fetch(CONFIG_WEB_URL);
-      inventoryData = await response.json();
-      renderInventory();
-    } catch (error) {
-      grid.innerHTML = "❌ Error al conectar con la base de datos.";
-      console.error(error);
+      if(!response.ok) throw new Error("Error en respuesta");
+      const rawData = await response.json();
+      
+      inventory = rawData.map(item => ({
+        ref: item.ID || ('REF-'+Math.floor(Math.random()*10000)),
+        name: item.Producto || 'Prenda sin nombre',
+        qty: parseInt(item.Cantidad) || 0,
+        price: parseFloat(item.Precio) || 0,
+        cat: item.Categoría || 'Otro',
+        size: 'Única'
+      }));
+    } catch (e) {
+      console.error("Error leyendo Google Sheets", e);
+      // Remueve o comenta la alerta visual para evitar bloqueos si deseas usar datos simulados
+      const grid = document.getElementById('productGrid');
+      if(grid) grid.innerHTML = '<div class="empty-state"><p style="color:var(--danger)">❌ Error al conectar con la base de datos. Verifica tu enlace de Google Script.</p></div>';
+    }
+  }
+
+  function renderDashboard() {
+    const totalStock = inventory.reduce((acc, item) => acc + item.qty, 0);
+    const lowStockCount = inventory.filter(item => item.qty <= 3).length;
+    
+    const todayStr = new Date().toDateString();
+    const todaySales = sales.filter(s => new Date(s.date).toDateString() === todayStr);
+    const revenue = todaySales.reduce((acc, s) => acc + s.total, 0);
+
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="icon">💰</div><div class="value">$${revenue.toLocaleString()}</div><div class="label">Ventas Hoy</div></div>
+      <div class="stat-card"><div class="icon">🛍️</div><div class="value">${todaySales.length}</div><div class="label">Órdenes Hoy</div></div>
+      <div class="stat-card"><div class="icon">👗</div><div class="value">${totalStock}</div><div class="label">Total Prendas</div></div>
+      <div class="stat-card"><div class="icon">⚠️</div><div class="value">${lowStockCount}</div><div class="label">Stock Bajo</div></div>
+    `;
+
+    const saleList = document.getElementById('todaySalesList');
+    if(todaySales.length === 0) {
+      saleList.innerHTML = '<div class="empty-state"><p>No hay ventas registradas hoy.</p></div>';
+    } else {
+      saleList.innerHTML = todaySales.map(s => `
+        <div class="sale-row">
+          <div class="sale-row-left"><div class="sale-dot">🛍️</div><div class="sale-info"><div class="sale-name">${s.items.map(i=>i.name).join(', ')}</div><div class="sale-meta">${s.payMethod.toUpperCase()} • ${new Date(s.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div></div></div>
+          <div class="sale-amount">$${s.total.toLocaleString()}</div>
+        </div>
+      `).join('');
+    }
+
+    const lowList = document.getElementById('lowStockList');
+    const lowItems = inventory.filter(item => item.qty <= 3);
+    if(lowItems.length === 0) {
+      lowList.innerHTML = '<div class="empty-state"><p class="text-success">🎉 ¡Todo el inventario está al día!</p></div>';
+    } else {
+      lowList.innerHTML = lowItems.map(item => `
+        <div class="low-stock-item">
+          <div class="low-stock-info"><div class="low-stock-name">${item.name}</div><div class="low-stock-detail">Ref: ${item.ref} • Cat: ${item.cat}</div></div>
+          <div class="low-stock-qty">${item.qty} ud</div>
+        </div>
+      `).join('');
     }
   }
 
   function renderInventory() {
     const grid = document.getElementById('productGrid');
+    if(!grid) return;
     const search = document.getElementById('searchInv').value.toLowerCase();
+    const filter = document.getElementById('filterCat').value;
     grid.innerHTML = '';
 
-    const filtered = inventoryData.filter(item => 
-      item.Producto && item.Producto.toLowerCase().includes(search)
-    );
+    const filtered = inventory.filter(item => {
+      const matchSearch = item.name.toLowerCase().includes(search) || item.ref.toLowerCase().includes(search);
+      const matchCat = filter === '' || item.cat === filter;
+      return matchSearch && matchCat;
+    });
 
-    if(filtered.length === 0) {
-      grid.innerHTML = '<p style="color:var(--gray)">No hay prendas registradas.</p>';
+    if(filtered.length === 0 && inventory.length > 0) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><p>No se encontraron prendas.</p></div>';
       return;
     }
 
-    filtered.forEach(item => {
+    filtered.forEach((item, index) => {
       const card = document.createElement('div');
       card.className = 'product-card';
+      if(currentUser.role === 'admin') {
+        card.onclick = () => openProductModal(inventory.indexOf(item));
+      }
+      
+      let stockTag = `<span class="tag tag-stock-ok">Stock: ${item.qty}</span>`;
+      if(item.qty === 0) stockTag = `<span class="tag tag-stock-out">Agotado</span>`;
+      else if(item.qty <= 3) stockTag = `<span class="tag tag-stock-low">Pocas: ${item.qty}</span>`;
+
       card.innerHTML = `
-        <div class="product-name">${item.Producto}</div>
-        <div style="font-size:0.8rem; color:var(--gray)">Cat: ${item.Categoría}</div>
-        <div class="product-price">$${Number(item.Precio).toLocaleString()}</div>
-        <div style="font-size:0.85rem; margin-top:8px; font-weight:bold; color:${item.Cantidad > 3 ? 'var(--success)' : 'var(--danger)'}">
-          Stock: ${item.Cantidad} uds
+        <div class="product-img">${item.cat === 'Vestido'?'👗':item.cat==='Pantalón'?'👖':'👚'}</div>
+        <div class="product-info">
+          <div class="product-name">${item.name}</div>
+          <div class="product-ref">Ref: ${item.ref}</div>
+          <div class="product-price">$${item.price.toLocaleString()}</div>
+          <div class="product-meta"><span class="tag tag-size">${item.size}</span>${stockTag}</div>
         </div>
       `;
       grid.appendChild(card);
     });
   }
 
-  function openModal() { document.getElementById('productModal').classList.add('open'); }
-  function closeModal() { document.getElementById('productModal').classList.remove('open'); }
+  function openProductModal(idx = null) {
+    if(currentUser.role !== 'admin') return;
+    document.getElementById('productModal').classList.add('open');
+    if(idx !== null) {
+      document.getElementById('modalProductTitle').innerText = "Editar Prenda";
+      document.getElementById('pIdx').value = idx;
+      document.getElementById('pName').value = inventory[idx].name;
+      document.getElementById('pPrice').value = inventory[idx].price;
+      document.getElementById('pQty').value = inventory[idx].qty;
+      document.getElementById('pCat').value = inventory[idx].cat;
+      document.getElementById('pSize').value = inventory[idx].size;
+    } else {
+      document.getElementById('modalProductTitle').innerText = "Nueva Prenda";
+      document.getElementById('pIdx').value = '';
+      document.getElementById('pName').value = '';
+      document.getElementById('pPrice').value = '';
+      document.getElementById('pQty').value = '';
+    }
+  }
 
-  // GUARDAR NUEVO PRODUCTO EN GOOGLE SHEETS
+  function closeProductModal() { document.getElementById('productModal').classList.remove('open'); }
+
   async function saveProduct() {
-    const name = document.getElementById('pName').value;
-    const qty = document.getElementById('pQty').value;
-    const price = document.getElementById('pPrice').value;
+    const name = document.getElementById('pName').value.trim();
+    const price = parseFloat(document.getElementById('pPrice').value);
+    const qty = parseInt(document.getElementById('pQty').value);
     const cat = document.getElementById('pCat').value;
+    const idx = document.getElementById('pIdx').value;
 
-    if(!name || !qty || !price) {
-      alert('Por favor llena todos los campos');
+    if(!name || isNaN(price) || isNaN(qty)) {
+      showToast("⚠️ Llena los campos correctamente");
       return;
     }
 
-    const newProduct = {
-      id: "REF-" + Math.floor(Math.random() * 10000),
-      producto: name,
-      cantidad: Number(qty),
-      precio: Number(price),
-      categoria: cat
-    };
+    let ref = "REF-" + Math.floor(Math.random() * 10000);
+    if(idx !== '') ref = inventory[idx].ref;
 
-    closeModal();
-    document.getElementById('productGrid').innerHTML = "⏳ Guardando nueva prenda en la nube...";
+    const cloudItem = { id: ref, producto: name, cantidad: qty, precio: price, categoria: cat };
+
+    closeProductModal();
+    showToast("⏳ Sincronizando con Google Sheets...");
 
     try {
       await fetch(CONFIG_WEB_URL, {
         method: "POST",
-        mode: "no-cors", 
+        mode: "no-cors",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProduct)
+        body: JSON.stringify(cloudItem)
       });
       
-      setTimeout(fetchInventory, 2000);
-    } catch (error) {
-      alert("Error al guardar producto");
-      fetchInventory();
+      setTimeout(async () => {
+        await fetchInventory();
+        renderInventory();
+        showToast("✅ Base de datos actualizada");
+      }, 2000);
+
+    } catch(e) {
+      showToast("❌ Error al guardar datos en la nube");
     }
   }
-</script>
-</body>
-</html>
+
+  function renderSalesProducts() {
+    const grid = document.getElementById('salesProductGrid');
+    const search = document.getElementById('searchSales').value.toLowerCase();
+    grid.innerHTML = '';
+
+    const filtered = inventory.filter(item => item.name.toLowerCase().includes(search) && item.qty > 0);
+
+    if(filtered.length === 0) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><p>No hay prendas disponibles para la venta.</p></div>';
+      return;
+    }
+
+    filtered.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.onclick = () => addToCart(item);
+      card.innerHTML = `
+        <div class="product-img" style="font-size:2rem;">🛒</div>
+        <div class="product-info">
+          <div class="product-name">${item.name}</div>
+          <div class="product-price">$${item.price.toLocaleString()}</div>
+          <div style="font-size:0.75rem;color:var(--gray)">Disponibles: ${item.qty} uds</div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  function addToCart(item) {
+    const existing = cart.find(c => c.ref === item.ref);
+    const stockLimit = item.qty;
+
+    if(existing) {
+      if(existing.qty < stockLimit) { existing.qty++; } 
+      else { showToast("⚠️ No hay más stock disponible"); return; }
+    } else {
+      cart.push({ ref: item.ref, name: item.name, price: item.price, qty: 1 });
+    }
+    renderCart();
+  }
+
+  function changeCartQty(ref, delta) {
+    const item = cart.find(c => c.ref === ref);
+    const original = inventory.find(i => i.ref === ref);
+    if(!item) return;
+
+    item.qty += delta;
+    if(item.qty > original.qty) { item.qty = original.qty; showToast("⚠️ Límite de stock alcanzado"); }
+    if(item.qty <= 0) cart = cart.filter(c => c.ref !== ref);
+    renderCart();
+  }
+
+  function renderCart() {
+    const container = document.getElementById('cartList');
+    if(cart.length === 0) {
+      container.innerHTML = '<p style="color:var(--gray);text-align:center;padding:20px 0;font-size:0.85rem;">El carrito está vacío</p>';
+      document.getElementById('cartTotal').innerText = '$0';
+      return;
+    }
+
+    container.innerHTML = cart.map(c => `
+      <div class="sale-item-row">
+        <div class="sale-item-info"><div class="sale-item-name">${c.name}</div><div class="sale-item-price">$${(c.price*c.qty).toLocaleString()}</div></div>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeCartQty('${c.ref}', -1)">-</button>
+          <span class="qty-num">${c.qty}</span>
+          <button class="qty-btn" onclick="changeCartQty('${c.ref}', 1)">+</button>
+        </div>
+      </div>
+    `).join('');
+
+    const total = cart.reduce((acc, c) => acc + (c.price * c.qty), 0);
+    document.getElementById('cartTotal').innerText = '$' + total.toLocaleString();
+  }
+
+  function setPayMethod(method) {
+    currentPayMethod = method;
+    document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('selected'));
+    document.getElementById(`pay-${method}`).classList.add('selected');
+  }
+
+  async function checkoutSale() {
+    if(cart.length === 0) return;
+
+    const total = cart.reduce((acc, c) => acc + (c.price * c.qty), 0);
+    const newSale = { id: 'FAC-'+Math.floor(Math.random()*100000), date: new Date().toISOString(), items: [...cart], total: total, payMethod: currentPayMethod };
+    
+    sales.push(newSale);
+    localStorage.setItem('bn_sales', JSON.stringify(sales));
+
+    for(let cItem of cart) {
+      const invItem = inventory.find(i => i.ref === cItem.ref);
+      if(invItem) {
+        invItem.qty -= cItem.qty;
+        try {
+          await fetch(CONFIG_WEB_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: invItem.ref, producto: invItem.name, cantidad: invItem.qty, price: invItem.price, categoria: invItem.cat })
+          });
+        } catch(err) { console.error(err); }
+      }
+    }
+
+    cart = [];
+    showToast("🛍️ ¡Venta completada con éxito!");
+    
+    setTimeout(async () => {
+      await fetchInventory();
+      navigateTo('dashboard');
+    }, 1500);
+  }
+
+  function renderReports() {
+    const container = document.getElementById('reportContent');
+    const totalSalesVal = sales.reduce((acc, s) => acc + s.total, 0);
+    
+    container.innerHTML = `
+      <div class="card">
+        <div class="section-title">Resumen Financiero Total</div>
+        <p style="font-size:1.5rem;font-weight:700;color:var(--burgundy);margin-bottom:8px;">$${totalSalesVal.toLocaleString()}</p>
+        <p style="color:var(--gray);font-size:0.85rem;">Ingresos acumulados por ventas en este dispositivo.</p>
+      </div>
+    `;
+  }
+
+  function switchReportTab(tab, element) {
+    document.querySelectorAll('.report-tab').forEach(t => t.classList.remove('active'));
+    element.classList.add('active');
+    const container = document.getElementById('reportContent');
+    
+    if(tab === 'general') {
+      renderReports();
+    } else {
+      if(sales.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No hay historial de ventas en este navegador.</p></div>';
+      } else {
+        container.innerHTML = `
+          <div class="card" style="padding:10px 20px;">
+            <table style="width:100%;">
+              <thead><tr><th>Factura</th><th>Fecha</th><th>Total</th><th>Método</th></tr></thead>
+              <tbody>
+                ${sales.map(s => `<tr><td>${s.id}</td><td>${new Date(s.date).toLocaleDateString()}</td><td class="fw-bold">$${s.total.toLocaleString()}</td><td>${s.payMethod.toUpperCase()}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      }
+    }
+  }
+
+  function renderUsers() {
+    const container = document.getElementById('usersList');
+    container.innerHTML = defaultUsers.map(u => `
+      <div class="user-card">
+        <div class="user-avatar">${u.initial}</div>
+        <div class="user-info">
+          <div class="user-name">${u.name}</div>
+          <span class="user-role-badge ${u.role==='admin'?'role-admin':'role-employee'}">${u.role.toUpperCase()}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function showToast(msg) {
+    let t = document.querySelector('.toast');
+    if(t) t.remove();
+    t = document.createElement('div');
+    t.className = 'toast';
+    t.innerText = msg;
+    document.body.appendChild(t);
+    setTimeout(() => { if(t) t.remove(); }, 2800);
+  }
 </html>
