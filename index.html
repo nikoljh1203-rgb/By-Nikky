@@ -16,15 +16,14 @@
   }
   body { font-family: 'Inter', sans-serif; background: var(--blush); color: var(--charcoal); min-height: 100vh; overflow-x: hidden; }
 
-  /* LOGIN */
-  #loginScreen { min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1; }
+  #loginScreen { min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px; }
   .login-card { background:var(--white);border-radius:24px;padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-md);text-align:center; }
   .brand-logo .ribbon { display:inline-block;background:var(--burgundy);color:var(--gold);font-family:'Cormorant Garant',serif;font-size:2.2rem;font-weight:600;letter-spacing:0.12em;padding:10px 32px;border-radius:4px; }
   .brand-tagline { font-family:'Cormorant Garant',serif;font-size:0.9rem;font-style:italic;color:var(--gray);letter-spacing:0.2em;margin-bottom:36px;margin-top:8px; }
   .gold-divider { width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:16px auto; }
   .form-group { margin-bottom:20px;text-align:left; }
   .form-group label { display:block;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--burgundy);margin-bottom:8px; }
-  .form-group input, .form-group select, .form-group textarea { width:100%;padding:12px 16px;border:1.5px solid var(--gold-light);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.95rem;color:var(--charcoal);background:var(--ivory);outline:none;transition:border-color 0.2s; }
+  .form-group input, .form-group select { width:100%;padding:12px 16px;border:1.5px solid var(--gold-light);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.95rem;color:var(--charcoal);background:var(--ivory);outline:none;transition:border-color 0.2s; }
   .form-group input:focus, .form-group select:focus { border-color:var(--burgundy); }
   .btn { display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s; }
   .btn-primary { background:var(--burgundy);color:var(--white);width:100%; }
@@ -36,7 +35,6 @@
   .btn-sm { padding:8px 16px;font-size:0.82rem;border-radius:8px; }
   .btn-xs { padding:5px 10px;font-size:0.78rem;border-radius:6px; }
 
-  /* APP */
   #app { display:none;min-height:100vh; }
   .topbar { position:fixed;top:0;left:0;right:0;background:var(--burgundy);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2); }
   .topbar-brand { font-family:'Cormorant Garant',serif;font-size:1.5rem;font-weight:600;color:var(--gold);letter-spacing:0.1em; }
@@ -173,14 +171,16 @@
   .low-stock-name { font-weight:600;font-size:0.9rem; }
   .low-stock-detail { font-size:0.78rem;color:var(--gray); }
   .low-stock-qty { font-family:'Cormorant Garant',serif;font-size:1.4rem;font-weight:700;color:var(--warning); }
-  .sync-badge { display:inline-flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--gold-light);margin-left:8px; }
-  .sync-dot { width:6px;height:6px;background:#4CAF50;border-radius:50%;animation:pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .loading-overlay { position:fixed;inset:0;background:rgba(255,255,255,0.8);display:flex;align-items:center;justify-content:center;z-index:500;display:none; }
+  .spinner { width:40px;height:40px;border:3px solid var(--blush);border-top-color:var(--burgundy);border-radius:50%;animation:spin 0.8s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .sync-badge { font-size:0.72rem;color:var(--gold-light);margin-left:8px; }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
 <div id="loginScreen">
   <div class="login-card">
     <div class="brand-logo"><div class="ribbon">By Nikky</div></div>
@@ -197,19 +197,18 @@
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="topbar">
-    <div class="topbar-brand">By Nikky <span class="sync-badge"><span class="sync-dot"></span>En línea</span></div>
+    <div class="topbar-brand">By Nikky <span class="sync-badge">☁️ En línea</span></div>
     <div class="topbar-right">
       <div class="user-pill">
         <div class="avatar" id="topAvatar">N</div>
         <div><div class="name" id="topName">—</div><div class="role" id="topRole">—</div></div>
       </div>
-      <button class="logout-btn" onclick="doLogout()" title="Salir">✕</button>
+      <button class="logout-btn" onclick="doLogout()">✕</button>
     </div>
   </div>
-  <div class="sidebar" id="sidebar">
+  <div class="sidebar">
     <div class="sidebar-brand"><div class="name">By Nikky</div><div class="sub">Boutique</div></div>
     <div class="sidebar-nav" id="sidebarNav"></div>
     <div class="desktop-user"><div class="d-name" id="sideUser">—</div><div class="d-role" id="sideRole">—</div></div>
@@ -242,4 +241,610 @@
     <div class="page" id="page-sales">
       <div class="page-title">Registrar Venta</div>
       <div class="page-subtitle">Busca prendas y agrega al carrito</div>
-      <div class="filter-bar"><div class="search-box"><span class="search-i
+      <div class="filter-bar"><div class="search-box"><span class="search-icon">🔍</span><input type="text" placeholder="Buscar prenda..." id="searchSale" oninput="renderSaleSearch()"></div></div>
+      <div style="display:grid;gap:20px;">
+        <div><div class="section-title">Resultados</div><div id="saleSearchResults"></div></div>
+        <div class="card"><div class="section-title">Carrito</div><div id="cartItems"></div><div id="cartTotalArea"></div></div>
+      </div>
+    </div>
+    <div class="page" id="page-reports">
+      <div class="page-title">Reportes</div>
+      <div class="page-subtitle">Análisis de ventas y ganancias</div>
+      <div class="report-tabs">
+        <button class="report-tab active" onclick="switchReport('today',this)">Hoy</button>
+        <button class="report-tab" onclick="switchReport('week',this)">Esta Semana</button>
+        <button class="report-tab" onclick="switchReport('month',this)">Este Mes</button>
+        <button class="report-tab" onclick="switchReport('all',this)">Todo</button>
+      </div>
+      <div class="stats-grid" id="reportStats"></div>
+      <div class="card"><div class="section-title">Historial de Ventas</div>
+        <div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Empleada</th><th>Prendas</th><th>Método</th><th>Total</th><th>Ganancia</th></tr></thead><tbody id="reportBody"></tbody></table></div>
+      </div>
+    </div>
+    <div class="page" id="page-users">
+      <div class="flex-between mb-16">
+        <div><div class="page-title">Usuarios</div><div class="page-subtitle">Gestión de accesos</div></div>
+        <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ Nuevo</button>
+      </div>
+      <div id="userList"></div>
+    </div>
+  </div>
+  <div class="bottom-nav" id="bottomNav"></div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="productModalTitle">Nueva Prenda</div><button class="modal-close" onclick="closeModal('productModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Referencia *</label><input type="text" id="pRef" placeholder="Ej: BN-001"></div>
+        <div class="form-group"><label>Categoría *</label><select id="pCat"><option value="">Seleccionar...</option><option>Blusa</option><option>Pantalón</option><option>Vestido</option><option>Falda</option><option>Chaqueta</option><option>Conjunto</option><option>Otro</option></select></div>
+      </div>
+      <div class="form-group"><label>Nombre *</label><input type="text" id="pName" placeholder="Ej: Blusa floral manga corta"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Talla *</label><select id="pSize"><option value="">Seleccionar...</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>6</option><option>8</option><option>10</option><option>12</option><option>14</option><option>Única</option></select></div>
+        <div class="form-group"><label>Color *</label><input type="text" id="pColor" placeholder="Ej: Rosa palo"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Costo *</label><input type="number" id="pCost" placeholder="0" min="0"></div>
+        <div class="form-group"><label>Precio de Venta *</label><input type="number" id="pPrice" placeholder="0" min="0"></div>
+      </div>
+      <div class="form-group"><label>Cantidad *</label><input type="number" id="pQty" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Foto (emoji)</label><input type="text" id="pPhoto" placeholder="👗 👖 🧥 👒 ✨"></div>
+      <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" style="flex:1" onclick="saveProduct()">Guardar Prenda</button>
+        <button class="btn btn-outline" onclick="closeModal('productModal')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="saleModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Confirmar Venta</div><button class="modal-close" onclick="closeModal('saleModal')">✕</button></div>
+    <div class="modal-body">
+      <div id="saleModalItems"></div>
+      <div class="sale-total-bar" id="saleModalTotal"></div>
+      <div style="margin-top:20px">
+        <div class="section-title" style="font-size:1rem">Método de Pago</div>
+        <div class="pay-opts">
+          <div class="pay-opt selected" onclick="selectPay(this,'Efectivo')"><span class="pay-icon">💵</span>Efectivo</div>
+          <div class="pay-opt" onclick="selectPay(this,'Transferencia')"><span class="pay-icon">📲</span>Transferencia</div>
+          <div class="pay-opt" onclick="selectPay(this,'Tarjeta')"><span class="pay-icon">💳</span>Tarjeta</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="confirmSale()">✓ Confirmar Venta</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="detailTitle">Detalle</div><button class="modal-close" onclick="closeModal('detailModal')">✕</button></div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="userModalTitle">Nuevo Usuario</div><button class="modal-close" onclick="closeModal('userModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Nombre completo *</label><input type="text" id="uName" placeholder="Nombre de la empleada"></div>
+      <div class="form-group"><label>Usuario *</label><input type="text" id="uUser" placeholder="nombre_usuario"></div>
+      <div class="form-group"><label>Contraseña *</label><input type="password" id="uPass" placeholder="Mínimo 4 caracteres"></div>
+      <div class="form-group"><label>Rol *</label><select id="uRole"><option value="employee">Empleada</option><option value="admin">Administradora</option></select></div>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="saveUser()">Guardar</button>
+        <button class="btn btn-outline" onclick="closeModal('userModal')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════
+// GOOGLE SHEETS API
+// ══════════════════════════════════
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxN-WGVDMrYYsUMJdlLnUrFLswhCrjZ3u8SRIInIY-bBvFcgYwcAW4uHnu094UyYSD_/exec';
+
+async function sheetRead(sheetName) {
+  try {
+    const url = `${SCRIPT_URL}?action=read&sheet=${sheetName}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data || data.length < 2) return [];
+    const headers = data[0];
+    return data.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = row[i] || '');
+      return obj;
+    });
+  } catch(e) {
+    console.error('Error leyendo:', e);
+    return [];
+  }
+}
+
+async function sheetWrite(sheetName, row) {
+  try {
+    const url = `${SCRIPT_URL}?action=write&sheet=${sheetName}&row=${encodeURIComponent(JSON.stringify(row))}`;
+    await fetch(url);
+  } catch(e) { console.error('Error escribiendo:', e); }
+}
+
+async function sheetUpdate(sheetName, id, row) {
+  try {
+    const url = `${SCRIPT_URL}?action=update&sheet=${sheetName}&id=${id}&row=${encodeURIComponent(JSON.stringify(row))}`;
+    await fetch(url);
+  } catch(e) { console.error('Error actualizando:', e); }
+}
+
+async function sheetDelete(sheetName, id) {
+  try {
+    const url = `${SCRIPT_URL}?action=delete&sheet=${sheetName}&id=${id}`;
+    await fetch(url);
+  } catch(e) { console.error('Error eliminando:', e); }
+}
+
+// ══════════════════════════════════
+// LOCAL CACHE
+// ══════════════════════════════════
+const LS = {
+  get: (k, d) => { try { return JSON.parse(localStorage.getItem('bn_'+k)) ?? d; } catch { return d; } },
+  set: (k, v) => localStorage.setItem('bn_'+k, JSON.stringify(v))
+};
+
+const DEFAULT_USERS = [
+  { id:'u1', name:'Nikky (Admin)', username:'admin', password:'1234', role:'admin' },
+  { id:'u2', name:'Valentina García', username:'empleada', password:'1234', role:'employee' }
+];
+
+const DEFAULT_PRODUCTS = [
+  { id:'p1', ref:'BN-001', name:'Blusa floral manga corta', category:'Blusa', size:'S', color:'Rosa', cost:'35000', price:'75000', qty:'8', photo:'👗' },
+  { id:'p2', ref:'BN-002', name:'Pantalón palazzo negro', category:'Pantalón', size:'M', color:'Negro', cost:'55000', price:'110000', qty:'5', photo:'👖' },
+  { id:'p3', ref:'BN-003', name:'Vestido midi estampado', category:'Vestido', size:'S', color:'Azul marino', cost:'80000', price:'165000', qty:'3', photo:'👗' },
+  { id:'p4', ref:'BN-004', name:'Falda lápiz beige', category:'Falda', size:'M', color:'Beige', cost:'40000', price:'85000', qty:'7', photo:'👒' },
+  { id:'p5', ref:'BN-005', name:'Chaqueta crop denim', category:'Chaqueta', size:'L', color:'Azul claro', cost:'90000', price:'180000', qty:'2', photo:'🧥' },
+  { id:'p6', ref:'BN-006', name:'Conjunto lino verano', category:'Conjunto', size:'M', color:'Blanco', cost:'75000', price:'145000', qty:'4', photo:'✨' }
+];
+
+// ══════════════════════════════════
+// INIT — cargar datos de Sheets
+// ══════════════════════════════════
+async function loadAllData() {
+  showLoading(true);
+  try {
+    // Load users
+    let users = await sheetRead('usuarios');
+    if (!users.length) {
+      // First time — seed data
+      for (const u of DEFAULT_USERS) {
+        await sheetWrite('usuarios', [u.id, u.name, u.username, u.password, u.role]);
+      }
+      // Add headers first
+      users = DEFAULT_USERS;
+    }
+    LS.set('users', users);
+
+    // Load products
+    let products = await sheetRead('productos');
+    if (!products.length) {
+      for (const p of DEFAULT_PRODUCTS) {
+        await sheetWrite('productos', [p.id, p.ref, p.name, p.category, p.size, p.color, p.cost, p.price, p.qty, p.photo]);
+      }
+      products = DEFAULT_PRODUCTS;
+    }
+    LS.set('products', products);
+
+    // Load sales
+    let sales = await sheetRead('ventas');
+    LS.set('sales', sales);
+
+  } catch(e) {
+    console.error('Error cargando datos:', e);
+    // Use defaults if can't connect
+    if (!LS.get('users', []).length) LS.set('users', DEFAULT_USERS);
+    if (!LS.get('products', []).length) LS.set('products', DEFAULT_PRODUCTS);
+  }
+  showLoading(false);
+}
+
+// ══════════════════════════════════
+// APP STATE
+// ══════════════════════════════════
+let currentUser = null;
+let selectedPayMethod = 'Efectivo';
+let cart = [];
+let editingProductId = null;
+let editingUserId = null;
+let currentReport = 'today';
+
+function getProducts() { return LS.get('products', []); }
+function getSales() { return LS.get('sales', []); }
+function getUsers() { return LS.get('users', []); }
+
+function showLoading(show) {
+  document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+}
+
+// ══════════════════════════════════
+// AUTH
+// ══════════════════════════════════
+async function init() {
+  await loadAllData();
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const found = getUsers().find(x => (x.username||x[2]) === u && (x.password||x[3]) === p);
+  if (!found) { showToast('❌ Usuario o contraseña incorrectos'); return; }
+  currentUser = {
+    id: found.id || found[0],
+    name: found.name || found[1],
+    username: found.username || found[2],
+    role: found.role || found[4]
+  };
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  initApp();
+}
+
+function doLogout() {
+  currentUser = null; cart = [];
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+function initApp() {
+  const initials = currentUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('topAvatar').textContent = initials;
+  document.getElementById('topName').textContent = currentUser.name.split(' ')[0];
+  document.getElementById('topRole').textContent = currentUser.role==='admin'?'Administradora':'Empleada';
+  document.getElementById('sideUser').textContent = currentUser.name;
+  document.getElementById('sideRole').textContent = currentUser.role==='admin'?'Administradora':'Empleada';
+  const isAdmin = currentUser.role==='admin';
+  const navItems = [
+    {id:'dashboard',icon:'🏠',label:'Inicio',page:'dashboard'},
+    {id:'inventory',icon:'👗',label:'Inventario',page:'inventory'},
+    {id:'sales',icon:'🛍️',label:'Vender',page:'sales'},
+    ...(isAdmin?[{id:'reports',icon:'📊',label:'Reportes',page:'reports'},{id:'users',icon:'👥',label:'Usuarios',page:'users'}]:[])
+  ];
+  document.getElementById('bottomNav').innerHTML = navItems.map(n=>`<button class="nav-item ${n.id==='dashboard'?'active':''}" onclick="navigate('${n.page}',this)" data-page="${n.page}"><span class="nav-icon">${n.icon}</span>${n.label}</button>`).join('');
+  document.getElementById('sidebarNav').innerHTML = navItems.map(n=>`<button class="side-item ${n.id==='dashboard'?'active':''}" onclick="navigate('${n.page}',this)" data-page="${n.page}"><span class="icon">${n.icon}</span>${n.label}</button>`).join('');
+  document.getElementById('addProductBtn').style.display = isAdmin?'inline-flex':'none';
+  navigate('dashboard');
+}
+
+function navigate(page, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const t = document.getElementById('page-'+page);
+  if(t) t.classList.add('active');
+  document.querySelectorAll('.nav-item,.side-item').forEach(i=>i.classList.remove('active'));
+  if(el) el.classList.add('active');
+  else document.querySelectorAll(`[data-page="${page}"]`).forEach(i=>i.classList.add('active'));
+  if(page==='dashboard') renderDashboard();
+  if(page==='inventory') renderInventory();
+  if(page==='sales'){cart=[];renderSaleSearch();renderCart();}
+  if(page==='reports') renderReports(currentReport);
+  if(page==='users') renderUsers();
+}
+
+function p(product, field) {
+  if (product[field] !== undefined) return product[field];
+  const fields = ['id','ref','name','category','size','color','cost','price','qty','photo'];
+  const i = fields.indexOf(field);
+  return i >= 0 ? (product[i] || '') : '';
+}
+
+function renderDashboard() {
+  const today = new Date();
+  document.getElementById('dashDate').textContent = today.toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const todayStr = today.toISOString().split('T')[0];
+  const monthStr = todayStr.slice(0,7);
+  const sales = getSales();
+  const products = getProducts();
+  const todaySales = sales.filter(s=>(s.date||s[0])===todayStr);
+  const monthSales = sales.filter(s=>(s.date||s[0]||'').startsWith(monthStr));
+  const todayTotal = todaySales.reduce((a,s)=>a+parseFloat(s.total||s[6]||0),0);
+  const monthProfit = monthSales.reduce((a,s)=>a+parseFloat(s.profit||s[7]||0),0);
+  const lowStock = products.filter(p=>parseInt(p.qty||p[8]||0)<=3&&parseInt(p.qty||p[8]||0)>0);
+  const totalItems = products.reduce((a,pr)=>a+parseInt(pr.qty||pr[8]||0),0);
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="icon">🛍️</div><div class="value">${fmt(todayTotal)}</div><div class="label">Ventas hoy</div></div>
+    <div class="stat-card"><div class="icon">💰</div><div class="value">${fmt(monthProfit)}</div><div class="label">Ganancia mes</div></div>
+    <div class="stat-card"><div class="icon">⚠️</div><div class="value">${lowStock.length}</div><div class="label">Stock bajo</div></div>
+    <div class="stat-card"><div class="icon">👗</div><div class="value">${totalItems}</div><div class="label">Prendas totales</div></div>`;
+  document.getElementById('todaySalesList').innerHTML = todaySales.length===0
+    ? '<div class="empty-state"><div class="empty-icon">🛍️</div><p>Sin ventas hoy todavía</p></div>'
+    : todaySales.map(s=>`<div class="sale-row"><div class="sale-row-left"><div class="sale-dot">🛍️</div><div class="sale-info"><div class="sale-name">${s.items||s[3]||''}</div><div class="sale-meta">${s.time||s[1]||''} · ${s.user||s[2]||''} · ${s.payment||s[5]||''}</div></div></div><div class="sale-amount">${fmt(s.total||s[6]||0)}</div></div>`).join('');
+  document.getElementById('lowStockList').innerHTML = lowStock.length===0
+    ? '<div class="empty-state"><div class="empty-icon">✅</div><p>Todo el stock está bien</p></div>'
+    : lowStock.map(pr=>`<div class="low-stock-item"><div style="font-size:1.5rem">${pr.photo||pr[9]||'👗'}</div><div class="low-stock-info"><div class="low-stock-name">${pr.name||pr[2]}</div><div class="low-stock-detail">${pr.ref||pr[1]} · ${pr.size||pr[4]} · ${pr.color||pr[5]}</div></div><div class="low-stock-qty">${pr.qty||pr[8]}</div></div>`).join('');
+}
+
+function renderInventory() {
+  const search = (document.getElementById('searchInv').value||'').toLowerCase();
+  const cat = document.getElementById('filterCat').value;
+  const isAdmin = currentUser.role==='admin';
+  const products = getProducts().filter(pr=>{
+    const name=(pr.name||pr[2]||'').toLowerCase();
+    const ref=(pr.ref||pr[1]||'').toLowerCase();
+    const color=(pr.color||pr[5]||'').toLowerCase();
+    const category=pr.category||pr[3]||'';
+    const m = !search||name.includes(search)||ref.includes(search)||color.includes(search);
+    return m&&(!cat||category===cat);
+  });
+  const grid = document.getElementById('productGrid');
+  if(!products.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">👗</div><p>No se encontraron prendas</p></div>';return;}
+  grid.innerHTML = products.map(pr=>{
+    const qty=parseInt(pr.qty||pr[8]||0);
+    const st = qty===0?'tag-stock-out':qty<=3?'tag-stock-low':'tag-stock-ok';
+    const sl = qty===0?'Agotado':qty<=3?`Solo ${qty}`:`${qty} uds`;
+    const id=pr.id||pr[0];
+    return `<div class="product-card" onclick="showProductDetail('${id}')"><div class="product-img">${pr.photo||pr[9]||'👗'}</div><div class="product-info"><div class="product-name">${pr.name||pr[2]}</div><div class="product-ref">${pr.ref||pr[1]}</div><div class="product-price">${fmt(pr.price||pr[7]||0)}</div><div class="product-meta"><span class="tag tag-size">${pr.size||pr[4]}</span><span class="tag ${st}">${sl}</span></div></div></div>`;
+  }).join('');
+}
+
+function showProductDetail(id) {
+  const pr = getProducts().find(x=>(x.id||x[0])===id); if(!pr) return;
+  const isAdmin = currentUser.role==='admin';
+  const price=parseFloat(pr.price||pr[7]||0);
+  const cost=parseFloat(pr.cost||pr[6]||0);
+  const profit=price-cost;
+  const margin=price>0?((profit/price)*100).toFixed(0):0;
+  const qty=parseInt(pr.qty||pr[8]||0);
+  const st=qty===0?'tag-stock-out':qty<=3?'tag-stock-low':'tag-stock-ok';
+  document.getElementById('detailTitle').textContent = pr.name||pr[2];
+  document.getElementById('detailBody').innerHTML = `
+    <div style="font-size:5rem;text-align:center;margin:16px 0">${pr.photo||pr[9]||'👗'}</div>
+    <table style="width:100%;font-size:0.88rem">
+      <tr><td style="color:var(--gray);padding:8px 0;border-bottom:1px solid var(--gray-light)">Referencia</td><td style="font-weight:600;text-align:right;padding:8px 0;border-bottom:1px solid var(--gray-light)">${pr.ref||pr[1]}</td></tr>
+      <tr><td style="color:var(--gray);padding:8px 0;border-bottom:1px solid var(--gray-light)">Categoría</td><td style="font-weight:600;text-align:right;padding:8px 0;border-bottom:1px solid var(--gray-light)">${pr.category||pr[3]}</td></tr>
+      <tr><td style="color:var(--gray);padding:8px 0;border-bottom:1px solid var(--gray-light)">Talla</td><td style="font-weight:600;text-align:right;padding:8px 0;border-bottom:1px solid var(--gray-light)">${pr.size||pr[4]}</td></tr>
+      <tr><td style="color:var(--gray);padding:8px 0;border-bottom:1px solid var(--gray-light)">Color</td><td style="font-weight:600;text-align:right;padding:8px 0;border-bottom:1px solid var(--gray-light)">${pr.color||pr[5]}</td></tr>
+      <tr><td style="color:var(--gray);padding:8px 0;border-bottom:1px solid var(--gray-light)">Precio</td><td style="font-weight:700;color:var(--burgundy);text-align:right;padding:8px 0;border-bottom:1px solid var(--gray-light)">${fmt(price)}</td></tr>
+      ${isAdmin?`<tr><td style="color:var(--gray);padding:8px 0;border-bottom:1px solid var(--gray-light)">Costo</td><td style="font-weight:600;text-align:right;padding:8px 0;border-bottom:1px solid var(--gray-light)">${fmt(cost)}</td></tr>
+      <tr><td style="color:var(--gray);padding:8px 0;border-bottom:1px solid var(--gray-light)">Ganancia</td><td style="font-weight:600;color:var(--success);text-align:right;padding:8px 0;border-bottom:1px solid var(--gray-light)">${fmt(profit)} (${margin}%)</td></tr>`:''}
+      <tr><td style="color:var(--gray);padding:8px 0">Disponible</td><td style="text-align:right;padding:8px 0"><span class="tag ${st}">${qty} unidades</span></td></tr>
+    </table>
+    ${isAdmin?`<div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-outline" style="flex:1" onclick="closeModal('detailModal');openProductModal('${id}')">✏️ Editar</button><button class="btn btn-danger btn-sm" onclick="deleteProduct('${id}')">🗑️</button></div>`:''}`;
+  openModal('detailModal');
+}
+
+function openProductModal(id=null) {
+  editingProductId=id;
+  document.getElementById('productModalTitle').textContent=id?'Editar Prenda':'Nueva Prenda';
+  ['pRef','pCat','pName','pSize','pColor','pCost','pPrice','pQty','pPhoto'].forEach(i=>document.getElementById(i).value='');
+  if(id){
+    const pr=getProducts().find(x=>(x.id||x[0])===id);
+    if(pr){
+      document.getElementById('pRef').value=pr.ref||pr[1]||'';
+      document.getElementById('pCat').value=pr.category||pr[3]||'';
+      document.getElementById('pName').value=pr.name||pr[2]||'';
+      document.getElementById('pSize').value=pr.size||pr[4]||'';
+      document.getElementById('pColor').value=pr.color||pr[5]||'';
+      document.getElementById('pCost').value=pr.cost||pr[6]||'';
+      document.getElementById('pPrice').value=pr.price||pr[7]||'';
+      document.getElementById('pQty').value=pr.qty||pr[8]||'';
+      document.getElementById('pPhoto').value=pr.photo||pr[9]||'';
+    }
+  }
+  openModal('productModal');
+}
+
+async function saveProduct() {
+  const ref=document.getElementById('pRef').value.trim();
+  const cat=document.getElementById('pCat').value;
+  const name=document.getElementById('pName').value.trim();
+  const size=document.getElementById('pSize').value;
+  const color=document.getElementById('pColor').value.trim();
+  const cost=document.getElementById('pCost').value||'0';
+  const price=document.getElementById('pPrice').value||'0';
+  const qty=document.getElementById('pQty').value||'0';
+  const photo=document.getElementById('pPhoto').value.trim()||'👗';
+  if(!ref||!cat||!name||!size||!color||!price){showToast('⚠️ Completa todos los campos');return;}
+  const dup=getProducts().find(x=>(x.ref||x[1])===ref&&(x.id||x[0])!==editingProductId);
+  if(dup){showToast('❌ La referencia ya existe');return;}
+  showLoading(true);
+  const id=editingProductId||'p'+Date.now();
+  const row=[id,ref,name,cat,size,color,cost,price,qty,photo];
+  if(editingProductId){
+    await sheetUpdate('productos',id,row);
+    let products=getProducts().map(x=>(x.id||x[0])===id?{id,ref,name,category:cat,size,color,cost,price,qty,photo}:x);
+    LS.set('products',products);
+  } else {
+    await sheetWrite('productos',row);
+    let products=getProducts();
+    products.push({id,ref,name,category:cat,size,color,cost,price,qty,photo});
+    LS.set('products',products);
+  }
+  showLoading(false);
+  showToast(editingProductId?'✅ Prenda actualizada':'✅ Prenda agregada');
+  closeModal('productModal');closeModal('detailModal');renderInventory();renderDashboard();
+}
+
+async function deleteProduct(id) {
+  if(!confirm('¿Eliminar esta prenda?'))return;
+  showLoading(true);
+  await sheetDelete('productos',id);
+  LS.set('products',getProducts().filter(x=>(x.id||x[0])!==id));
+  showLoading(false);
+  closeModal('detailModal');renderInventory();renderDashboard();showToast('🗑️ Prenda eliminada');
+}
+
+function renderSaleSearch() {
+  const search=(document.getElementById('searchSale').value||'').toLowerCase();
+  const products=getProducts().filter(pr=>{
+    const qty=parseInt(pr.qty||pr[8]||0);
+    const name=(pr.name||pr[2]||'').toLowerCase();
+    const ref=(pr.ref||pr[1]||'').toLowerCase();
+    return qty>0&&(!search||name.includes(search)||ref.includes(search));
+  });
+  const el=document.getElementById('saleSearchResults');
+  if(!search){el.innerHTML='<p style="color:var(--gray);font-size:0.88rem">Escribe para buscar prendas...</p>';return;}
+  if(!products.length){el.innerHTML='<p style="color:var(--gray);font-size:0.88rem">No hay prendas disponibles</p>';return;}
+  el.innerHTML=products.map(pr=>{
+    const id=pr.id||pr[0];
+    const qty=parseInt(pr.qty||pr[8]||0);
+    return `<div class="sale-item-row"><div style="font-size:1.8rem">${pr.photo||pr[9]||'👗'}</div><div class="sale-item-info"><div class="sale-item-name">${pr.name||pr[2]}</div><div class="sale-item-ref">${pr.ref||pr[1]} · ${pr.size||pr[4]} · ${pr.color||pr[5]} · Disponible: ${qty}</div><div class="sale-item-price">${fmt(pr.price||pr[7]||0)}</div></div><button class="btn btn-gold btn-xs" onclick="addToCart('${id}')">+ Agregar</button></div>`;
+  }).join('');
+}
+
+function addToCart(id) {
+  const pr=getProducts().find(x=>(x.id||x[0])===id);
+  if(!pr){showToast('❌ Sin stock');return;}
+  const qty=parseInt(pr.qty||pr[8]||0);
+  if(qty===0){showToast('❌ Sin stock');return;}
+  const ex=cart.find(c=>c.productId===id);
+  if(ex){if(ex.qty>=qty){showToast(`⚠️ Máximo ${qty}`);return;}ex.qty++;}
+  else cart.push({productId:id,name:pr.name||pr[2],price:parseFloat(pr.price||pr[7]||0),cost:parseFloat(pr.cost||pr[6]||0),qty:1,maxQty:qty});
+  renderCart();showToast(`✓ ${pr.name||pr[2]} agregada`);
+}
+
+function renderCart() {
+  const el=document.getElementById('cartItems');const tel=document.getElementById('cartTotalArea');
+  if(!cart.length){el.innerHTML='<div class="empty-state" style="padding:30px 0"><div class="empty-icon">🛒</div><p>El carrito está vacío</p></div>';tel.innerHTML='';return;}
+  el.innerHTML=cart.map((c,i)=>`<div class="sale-item-row"><div class="sale-item-info"><div class="sale-item-name">${c.name}</div><div class="sale-item-price">${fmt(c.price)} c/u</div></div><div class="qty-control"><button class="qty-btn" onclick="changeQty(${i},-1)">−</button><span class="qty-num">${c.qty}</span><button class="qty-btn" onclick="changeQty(${i},1)">+</button></div><div style="font-weight:700;color:var(--burgundy);min-width:70px;text-align:right">${fmt(c.price*c.qty)}</div><button onclick="removeFromCart(${i})" style="background:none;border:none;cursor:pointer;color:var(--gray);font-size:1.1rem">✕</button></div>`).join('');
+  const total=cart.reduce((a,c)=>a+c.price*c.qty,0);
+  tel.innerHTML=`<div class="sale-total-bar"><span style="opacity:0.85;font-size:0.85rem">Total</span><span class="sale-total-value">${fmt(total)}</span></div><button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="openSaleConfirm()">Proceder al Cobro →</button>`;
+}
+
+function changeQty(i,d){const c=cart[i];const nq=c.qty+d;if(nq<1){removeFromCart(i);return;}if(nq>c.maxQty){showToast(`⚠️ Máximo ${c.maxQty}`);return;}c.qty=nq;renderCart();}
+function removeFromCart(i){cart.splice(i,1);renderCart();}
+
+function openSaleConfirm() {
+  if(!cart.length){showToast('⚠️ Carrito vacío');return;}
+  selectedPayMethod='Efectivo';
+  document.querySelectorAll('.pay-opt').forEach(el=>el.classList.remove('selected'));
+  document.querySelector('.pay-opt').classList.add('selected');
+  document.getElementById('saleModalItems').innerHTML=cart.map(c=>`<div class="sale-item-row" style="margin-bottom:8px"><div class="sale-item-info"><div class="sale-item-name">${c.name}</div><div class="sale-item-ref">Cantidad: ${c.qty}</div></div><div class="sale-item-price">${fmt(c.price*c.qty)}</div></div>`).join('');
+  const total=cart.reduce((a,c)=>a+c.price*c.qty,0);
+  document.getElementById('saleModalTotal').innerHTML=`<span style="opacity:0.85;font-size:0.85rem">Total a cobrar</span><span class="sale-total-value">${fmt(total)}</span>`;
+  openModal('saleModal');
+}
+
+function selectPay(el,method){selectedPayMethod=method;document.querySelectorAll('.pay-opt').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');}
+
+async function confirmSale() {
+  if(!cart.length)return;
+  const now=new Date();
+  const dateStr=now.toISOString().split('T')[0];
+  const timeStr=now.toTimeString().slice(0,5);
+  const itemsStr=cart.map(c=>`${c.name} x${c.qty}`).join(', ');
+  const total=cart.reduce((a,c)=>a+c.price*c.qty,0);
+  const profit=cart.reduce((a,c)=>a+(c.price-c.cost)*c.qty,0);
+  showLoading(true);
+  // Save sale
+  const saleId='s'+Date.now();
+  await sheetWrite('ventas',[dateStr,timeStr,currentUser.name,itemsStr,cart.length,selectedPayMethod,total,profit,saleId]);
+  const sales=getSales();
+  sales.push({id:saleId,date:dateStr,time:timeStr,user:currentUser.name,items:itemsStr,payment:selectedPayMethod,total,profit});
+  LS.set('sales',sales);
+  // Update inventory
+  for(const c of cart){
+    const pr=getProducts().find(x=>(x.id||x[0])===c.productId);
+    if(pr){
+      const newQty=Math.max(0,parseInt(pr.qty||pr[8]||0)-c.qty);
+      const id=pr.id||pr[0];
+      await sheetUpdate('productos',id,[id,pr.ref||pr[1],pr.name||pr[2],pr.category||pr[3],pr.size||pr[4],pr.color||pr[5],pr.cost||pr[6],pr.price||pr[7],newQty,pr.photo||pr[9]||'👗']);
+      let products=getProducts().map(x=>(x.id||x[0])===id?{...x,qty:String(newQty)}:x);
+      LS.set('products',products);
+    }
+  }
+  showLoading(false);
+  closeModal('saleModal');cart=[];renderCart();
+  document.getElementById('searchSale').value='';renderSaleSearch();
+  showToast(`✅ Venta registrada · ${fmt(total)}`);
+  renderDashboard();
+}
+
+function switchReport(period,el){currentReport=period;document.querySelectorAll('.report-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderReports(period);}
+
+function renderReports(period) {
+  const today=new Date();const todayStr=today.toISOString().split('T')[0];const monthStr=todayStr.slice(0,7);const weekAgo=new Date(today);weekAgo.setDate(weekAgo.getDate()-7);
+  let sales=[...getSales()];
+  if(period==='today')sales=sales.filter(s=>(s.date||s[0])===todayStr);
+  else if(period==='week')sales=sales.filter(s=>new Date(s.date||s[0])>=weekAgo);
+  else if(period==='month')sales=sales.filter(s=>(s.date||s[0]||'').startsWith(monthStr));
+  const tr=sales.reduce((a,s)=>a+parseFloat(s.total||s[6]||0),0);
+  const tp=sales.reduce((a,s)=>a+parseFloat(s.profit||s[7]||0),0);
+  const ti=sales.reduce((a,s)=>a+parseInt(s.items_count||s[4]||0),0);
+  document.getElementById('reportStats').innerHTML=`
+    <div class="stat-card"><div class="icon">🛍️</div><div class="value">${sales.length}</div><div class="label">Ventas</div></div>
+    <div class="stat-card"><div class="icon">💵</div><div class="value">${fmt(tr)}</div><div class="label">Ingresos</div></div>
+    <div class="stat-card"><div class="icon">💰</div><div class="value">${fmt(tp)}</div><div class="label">Ganancias</div></div>
+    <div class="stat-card"><div class="icon">👗</div><div class="value">${ti}</div><div class="label">Prendas vendidas</div></div>`;
+  const tbody=document.getElementById('reportBody');
+  if(!sales.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:32px">Sin ventas en este período</td></tr>';return;}
+  tbody.innerHTML=[...sales].reverse().map(s=>`<tr><td>${s.date||s[0]}</td><td>${s.time||s[1]}</td><td>${s.user||s[2]}</td><td>${s.items||s[3]}</td><td><span class="tag tag-size">${s.payment||s[5]}</span></td><td class="fw-bold">${fmt(s.total||s[6]||0)}</td><td class="text-success fw-bold">+${fmt(s.profit||s[7]||0)}</td></tr>`).join('');
+}
+
+function renderUsers() {
+  document.getElementById('userList').innerHTML=getUsers().map(u=>{
+    const id=u.id||u[0];const name=u.name||u[1];const username=u.username||u[2];const role=u.role||u[4];
+    return `<div class="user-card"><div class="user-avatar">${name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div><div class="user-info"><div class="user-name">${name}</div><div>@${username}</div><span class="user-role-badge ${role==='admin'?'role-admin':'role-employee'}">${role==='admin'?'Administradora':'Empleada'}</span></div><div style="display:flex;gap:8px"><button class="btn btn-outline btn-xs" onclick="openUserModal('${id}')">✏️</button>${id!==currentUser.id?`<button class="btn btn-danger btn-xs" onclick="deleteUser('${id}')">🗑️</button>`:''}</div></div>`;
+  }).join('');
+}
+
+function openUserModal(id=null) {
+  editingUserId=id;
+  document.getElementById('userModalTitle').textContent=id?'Editar Usuario':'Nuevo Usuario';
+  ['uName','uUser','uPass'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('uRole').value='employee';
+  if(id){
+    const u=getUsers().find(x=>(x.id||x[0])===id);
+    if(u){document.getElementById('uName').value=u.name||u[1]||'';document.getElementById('uUser').value=u.username||u[2]||'';document.getElementById('uRole').value=u.role||u[4]||'employee';}
+  }
+  openModal('userModal');
+}
+
+async function saveUser() {
+  const name=document.getElementById('uName').value.trim();
+  const username=document.getElementById('uUser').value.trim();
+  const password=document.getElementById('uPass').value;
+  const role=document.getElementById('uRole').value;
+  if(!name||!username){showToast('⚠️ Completa nombre y usuario');return;}
+  const dup=getUsers().find(u=>(u.username||u[2])===username&&(u.id||u[0])!==editingUserId);
+  if(dup){showToast('❌ El usuario ya existe');return;}
+  if(!editingUserId&&(!password||password.length<4)){showToast('⚠️ Contraseña mínimo 4 caracteres');return;}
+  showLoading(true);
+  const id=editingUserId||'u'+Date.now();
+  const existing=editingUserId?getUsers().find(u=>(u.id||u[0])===editingUserId):null;
+  const pass=password||(existing?existing.password||existing[3]:'');
+  const row=[id,name,username,pass,role];
+  if(editingUserId){
+    await sheetUpdate('usuarios',id,row);
+    LS.set('users',getUsers().map(u=>(u.id||u[0])===id?{id,name,username,password:pass,role}:u));
+  } else {
+    await sheetWrite('usuarios',row);
+    const users=getUsers();users.push({id,name,username,password:pass,role});LS.set('users',users);
+  }
+  showLoading(false);
+  showToast(editingUserId?'✅ Usuario actualizado':'✅ Usuario creado');
+  closeModal('userModal');renderUsers();
+}
+
+async function deleteUser(id) {
+  if(!confirm('¿Eliminar este usuario?'))return;
+  showLoading(true);
+  await sheetDelete('usuarios',id);
+  LS.set('users',getUsers().filter(u=>(u.id||u[0])!==id));
+  showLoading(false);renderUsers();showToast('🗑️ Usuario eliminado');
+}
+
+function fmt(n){return '$'+Math.round(parseFloat(n)||0).toLocaleString('es-CO');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showToast(msg){const old=document.querySelector('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// Start
+init();
+</script>
+</body>
+</html>
