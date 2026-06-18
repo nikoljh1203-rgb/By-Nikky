@@ -16,15 +16,14 @@
   }
   body { font-family: 'Inter', sans-serif; background: var(--blush); color: var(--charcoal); min-height: 100vh; overflow-x: hidden; }
 
-  /* LOGIN */
-  #loginScreen { min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1; }
+  #loginScreen { min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px; }
   .login-card { background:var(--white);border-radius:24px;padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-md);text-align:center; }
   .brand-logo .ribbon { display:inline-block;background:var(--burgundy);color:var(--gold);font-family:'Cormorant Garant',serif;font-size:2.2rem;font-weight:600;letter-spacing:0.12em;padding:10px 32px;border-radius:4px; }
   .brand-tagline { font-family:'Cormorant Garant',serif;font-size:0.9rem;font-style:italic;color:var(--gray);letter-spacing:0.2em;margin-bottom:36px;margin-top:8px; }
   .gold-divider { width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:16px auto; }
   .form-group { margin-bottom:20px;text-align:left; }
   .form-group label { display:block;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--burgundy);margin-bottom:8px; }
-  .form-group input, .form-group select, .form-group textarea { width:100%;padding:12px 16px;border:1.5px solid var(--gold-light);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.95rem;color:var(--charcoal);background:var(--ivory);outline:none;transition:border-color 0.2s; }
+  .form-group input, .form-group select { width:100%;padding:12px 16px;border:1.5px solid var(--gold-light);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.95rem;color:var(--charcoal);background:var(--ivory);outline:none;transition:border-color 0.2s; }
   .form-group input:focus, .form-group select:focus { border-color:var(--burgundy); }
   .btn { display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s; }
   .btn-primary { background:var(--burgundy);color:var(--white);width:100%; }
@@ -36,7 +35,6 @@
   .btn-sm { padding:8px 16px;font-size:0.82rem;border-radius:8px; }
   .btn-xs { padding:5px 10px;font-size:0.78rem;border-radius:6px; }
 
-  /* APP */
   #app { display:none;min-height:100vh; }
   .topbar { position:fixed;top:0;left:0;right:0;background:var(--burgundy);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2); }
   .topbar-brand { font-family:'Cormorant Garant',serif;font-size:1.5rem;font-weight:600;color:var(--gold);letter-spacing:0.1em; }
@@ -173,14 +171,16 @@
   .low-stock-name { font-weight:600;font-size:0.9rem; }
   .low-stock-detail { font-size:0.78rem;color:var(--gray); }
   .low-stock-qty { font-family:'Cormorant Garant',serif;font-size:1.4rem;font-weight:700;color:var(--warning); }
-  .sync-badge { display:inline-flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--gold-light);margin-left:8px; }
-  .sync-dot { width:6px;height:6px;background:#4CAF50;border-radius:50%;animation:pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .loading-overlay { position:fixed;inset:0;background:rgba(255,255,255,0.8);display:flex;align-items:center;justify-content:center;z-index:500;display:none; }
+  .spinner { width:40px;height:40px;border:3px solid var(--blush);border-top-color:var(--burgundy);border-radius:50%;animation:spin 0.8s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .sync-badge { font-size:0.72rem;color:var(--gold-light);margin-left:8px; }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
 <div id="loginScreen">
   <div class="login-card">
     <div class="brand-logo"><div class="ribbon">By Nikky</div></div>
@@ -197,19 +197,18 @@
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="topbar">
-    <div class="topbar-brand">By Nikky <span class="sync-badge"><span class="sync-dot"></span>En línea</span></div>
+    <div class="topbar-brand">By Nikky <span class="sync-badge">☁️ En línea</span></div>
     <div class="topbar-right">
       <div class="user-pill">
         <div class="avatar" id="topAvatar">N</div>
         <div><div class="name" id="topName">—</div><div class="role" id="topRole">—</div></div>
       </div>
-      <button class="logout-btn" onclick="doLogout()" title="Salir">✕</button>
+      <button class="logout-btn" onclick="doLogout()">✕</button>
     </div>
   </div>
-  <div class="sidebar" id="sidebar">
+  <div class="sidebar">
     <div class="sidebar-brand"><div class="name">By Nikky</div><div class="sub">Boutique</div></div>
     <div class="sidebar-nav" id="sidebarNav"></div>
     <div class="desktop-user"><div class="d-name" id="sideUser">—</div><div class="d-role" id="sideRole">—</div></div>
@@ -241,5 +240,4 @@
     </div>
     <div class="page" id="page-sales">
       <div class="page-title">Registrar Venta</div>
-      <div class="page-subtitle">Busca prendas y agrega al carrito</div>
-      <div class="filter-bar"><div class="search-box"><span class="search-i
+      <div class="page-subtitle">Busca prendas y agrega al carri
